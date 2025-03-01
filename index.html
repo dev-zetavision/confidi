@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor 3D JSON</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <script>
+        // 🚀 Inicializa la escena
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 🎮 Controles de cámara (zoom, rotar, mover)
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // 📌 Cargar JSON (cambia 'tu_modelo.json' por tu archivo real)
+        fetch('Apadana.json')
+            .then(response => response.json())
+            .then(data => {
+                console.log("Modelo cargado:", data);
+
+                // 📍 Crear diccionario de transformaciones
+                const transformMap = {};
+                data.transforms.forEach(t => {
+                    transformMap[t.id] = t;
+                });
+
+                // 📌 Cargar todos los meshes
+                data.meshes.forEach(meshData => {
+                    console.log("Cargando mesh:", meshData.name);
+
+                    const positions = new Float32Array(meshData.attributes.find(attr => attr.name === "aPos").data);
+                    const indices = new Uint16Array(meshData.indices);
+
+                    // 📌 Crear la geometría en Three.js
+                    const geometry = new THREE.BufferGeometry();
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+
+                    // 📌 Material (wireframe para ver estructura)
+                    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    scene.add(mesh);
+
+                    // 📍 Buscar la transformación de este mesh
+                    if (transformMap[meshData.instanceId]) {
+                        const transform = transformMap[meshData.instanceId];
+                        mesh.position.set(...transform.position);
+                        mesh.scale.set(...transform.scale);
+                        // La rotación viene en cuaterniones [x, y, z, w]
+                        const quaternion = new THREE.Quaternion(...transform.rotation);
+                        mesh.setRotationFromQuaternion(quaternion);
+                    }
+                });
+
+                // 📍 Ajustar la cámara
+                camera.position.set(0, 5, 10);
+                controls.update();
+            })
+            .catch(error => console.error("Error cargando JSON:", error));
+
+        // 🎥 Animación
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 📏 Ajuste de tamaño si se cambia la ventana
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+</html>

@@ -1,2 +1,0 @@
-# confidi
-Landign page confidi 

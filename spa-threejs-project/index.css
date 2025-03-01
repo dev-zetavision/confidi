@@ -1,0 +1,82 @@
+/* Global styles for the SPA project */
+
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2ecc71;
+    --background-color: #f4f4f4;
+    --text-color: #333;
+    --font-family: 'Arial', sans-serif;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-family);
+    /* background-color: var(--background-color); */
+    color: var(--text-color);
+
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+
+    justify-content: space-between;
+}
+
+h1, h2, h3 {
+    color: var(--primary-color);
+}
+
+a {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.nav-links{
+    display: flex;
+    justify-content: space-around;
+}
+
+#app-content{
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#app-content > section{
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header, .footer {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.button {
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.button:hover {
+    background-color: darken(var(--secondary-color), 10%);
+}
