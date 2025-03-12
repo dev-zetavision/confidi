@@ -1,41 +1,46 @@
-import { MongoClient } from "mongodb";
-import mongoose from "mongoose";
-
 // Comprueba si la autenticación está habilitada
 const isAuthEnabled = process.env.AUTH_ENABLED === "true";
 
-// Solo realiza la verificación y configuración de MongoDB si la autenticación está habilitada
-if (isAuthEnabled && !process.env.MONGODB_URI) {
-  throw new Error("Please add your MongoDB URI to .env.local");
-}
-
-const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/dummy";
-const options = {};
-
+// Imports condicionales para evitar cargar módulos de server en el cliente
+let MongoClient;
+let mongoose;
 let client;
 let clientPromise;
 
-// Solo inicializa la conexión si la autenticación está habilitada
-if (isAuthEnabled) {
-  if (process.env.NODE_ENV === "development") {
-    // En desarrollo, usamos una variable global para preservar el valor
-    // a través de las recargas de módulos causadas por HMR (Hot Module Replacement).
-    if (!global._mongoClientPromise) {
+// Solo importamos MongoDB si estamos en el servidor
+if (typeof window === 'undefined') {
+  // Estamos en el servidor
+  // Importaciones seguras de módulos de servidor
+  MongoClient = require("mongodb").MongoClient;
+  mongoose = require("mongoose");
+
+  // Solo realiza la verificación y configuración de MongoDB si la autenticación está habilitada
+  if (isAuthEnabled && !process.env.MONGODB_URI) {
+    throw new Error("Please add your MongoDB URI to .env.local");
+  }
+
+  const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/dummy";
+  const options = {};
+
+  // Solo inicializa la conexión si la autenticación está habilitada
+  if (isAuthEnabled) {
+    if (process.env.NODE_ENV === "development") {
+      if (!global._mongoClientPromise) {
+        client = new MongoClient(uri, options);
+        global._mongoClientPromise = client.connect();
+      }
+      clientPromise = global._mongoClientPromise;
+    } else {
       client = new MongoClient(uri, options);
-      global._mongoClientPromise = client.connect();
+      clientPromise = client.connect();
     }
-    clientPromise = global._mongoClientPromise;
-  } else {
-    // En producción, es mejor no usar una variable global.
-    client = new MongoClient(uri, options);
-    clientPromise = client.connect();
   }
 }
 
 // Función para conectar con Mongoose
 export const connectMongoDB = async () => {
-  // Si la autenticación está deshabilitada, no hace nada
-  if (!isAuthEnabled) {
+  // Si estamos en el cliente, o la autenticación está deshabilitada, no hacer nada
+  if (typeof window !== 'undefined' || !isAuthEnabled) {
     return null;
   }
   
@@ -50,5 +55,5 @@ export const connectMongoDB = async () => {
   }
 };
 
-// Exporta una promesa dummy si la autenticación está deshabilitada
-export default isAuthEnabled ? clientPromise : Promise.resolve({});
+// Exportamos un objeto vacío para el cliente, o clientPromise para el servidor
+export default typeof window === 'undefined' && isAuthEnabled ? clientPromise : null;

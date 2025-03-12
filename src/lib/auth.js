@@ -3,14 +3,26 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import clientPromise from "./mongodb";
-import User from "@/models/User";
-import bcrypt from "bcryptjs";
 import { connectMongoDB } from "./mongodb";
 
 // Variable global para comprobar si la autenticación está habilitada
 export const isAuthEnabled = process.env.AUTH_ENABLED === "true";
 
+// Importaciones condicionales para el lado del servidor
+let User;
+if (typeof window === 'undefined' && isAuthEnabled) {
+  // Solo importamos el modelo de usuario en el servidor y si la autenticación está habilitada
+  User = require("@/models/User").default;
+}
+
+// Función para obtener bcrypt solo en el servidor cuando sea necesario
+const getBcrypt = async () => {
+  if (typeof window !== 'undefined') return null; // En cliente, retornar null
+  return (await import('bcryptjs')).default;
+};
+
 export const authOptions = {
+  // Solo usa el adaptador cuando la autenticación está habilitada y estamos en el servidor
   providers: isAuthEnabled ? [
     CredentialsProvider({
       name: "credentials",
@@ -19,6 +31,7 @@ export const authOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
+        // Esta función solo se ejecuta en el servidor
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -31,6 +44,7 @@ export const authOptions = {
           return null;
         }
         
+        const bcrypt = await getBcrypt();
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.password

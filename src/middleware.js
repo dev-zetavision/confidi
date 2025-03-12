@@ -1,8 +1,7 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-// Verificar si la autenticación está habilitada
-const isAuthEnabled = process.env.AUTH_ENABLED === "true";
+// Verificar si la autenticación está habilitada usando variable pública
+const isAuthEnabled = process.env.NEXT_PUBLIC_AUTH_ENABLED === "true";
 
 // Middleware condicional basado en AUTH_ENABLED
 export default function middleware(req) {
@@ -11,6 +10,10 @@ export default function middleware(req) {
     return NextResponse.next();
   }
 
+  // Solo importamos withAuth si la autenticación está habilitada
+  // Esto evita cargar innecesariamente el módulo
+  const { withAuth } = require("next-auth/middleware");
+  
   // Si la autenticación está habilitada, usar withAuth
   const authMiddleware = withAuth(
     function authMiddleware(req) {
@@ -50,5 +53,7 @@ export default function middleware(req) {
 
 // Definir las rutas que estarán protegidas por este middleware
 export const config = { 
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/api/protected/:path*", "/login"]
+  matcher: isAuthEnabled ? 
+    ["/dashboard/:path*", "/admin/:path*", "/api/protected/:path*", "/login"] : 
+    [] // Si la autenticación está deshabilitada, no proteger ninguna ruta
 };

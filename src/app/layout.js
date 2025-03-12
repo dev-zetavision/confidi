@@ -2,31 +2,34 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { isAuthEnabled } from "@/lib/auth";
+import { ScrollProvider } from "@/context/ScrollContext";
+import Header from "@/components/layout/Header";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Confidi App",
-  description: "Confidi application with authentication",
+  title: "Confidi",
+  description: "Confidi landing page",
 };
 
-export default function RootLayout({ children }) {
-  // Renderiza el AuthProvider solo si la autenticación está habilitada
-  if (isAuthEnabled) {
-    return (
-      <html lang="en">
-        <body suppressHydrationWarning={true} className={inter.className}>
-          <AuthProvider>{children}</AuthProvider>
-        </body>
-      </html>
-    );
-  }
+// Componente que decide condicionalmente envolver con AuthProvider
+function OptionalAuthProvider({ children }) {
+  return isAuthEnabled ? <AuthProvider>{children}</AuthProvider> : children;
+}
 
-  // Si la autenticación está deshabilitada, no use el AuthProvider
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {children}
+      <body
+        suppressHydrationWarning={isAuthEnabled}
+        className={inter.className}
+      >
+        <OptionalAuthProvider>
+          <ScrollProvider>
+            <Header />
+            {children}
+          </ScrollProvider>
+        </OptionalAuthProvider>
       </body>
     </html>
   );
